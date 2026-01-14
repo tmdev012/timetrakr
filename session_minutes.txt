@@ -1,0 +1,6 @@
+1. Validated PATH export line: export PATH=$HOME/.local/bin:$PATH
+2. Confirmed PATH order: ~/.local/bin at the front, followed by Termux system bin.
+3. Created ~/.local/bin directory: mkdir -p ~/.local/bin
+4. Dropped test script: echo -e '#!/bin/bash\necho "PATH validation successful!"' > ~/.local/bin/testpath && chmod +x ~/.local/bin/testpath
+5. Built tsheet pipeline: logs timestamp + PWD, git add, commit, push.
+6. Validated tsheet run: commit pushed to GitHub, timesheet.csv created and updated.
