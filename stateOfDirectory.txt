@@ -1,0 +1,31 @@
+.
+├── README.md
+├── WLL.md
+├── gp_reproducibility.md
+├── ollama-termux
+│   ├── LICENSE
+│   ├── README.md
+│   └── ollama-termux
+│       ├── LICENSE
+│       ├── README.md
+│       └── ollama-termux
+│           ├── LICENSE
+│           ├── README.md
+│           └── ollama-termux
+│               ├── LICENSE
+│               ├── README.md
+│               └── olatex
+│                   └── ollama-termux
+│                       ├── LICENSE
+│                       └── README.md
+├── project_push.sh
+├── project_validate.sh
+├── reproducibility.md
+├── reproducibility_test.md
+├── session_minutes.txt
+├── stateOfDirectory.txt
+├── test_gp.txt
+├── test_gp2.txt
+└── timesheet.csv
+
+7 directories, 22 files

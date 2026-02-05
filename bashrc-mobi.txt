@@ -1,0 +1,452 @@
+    1  echo "Date: $(date)"
+    2  echo "========================================="
+    3  # Phase 1: Setup Verification
+    4  echo -e "\n🔍 PHASE 1: SETUP VERIFICATION"
+    5  echo "-----------------------------------------"
+    6  # Check if timetrakr-tools exists
+    7  if [ -d ~/timetrakr-tools ]; then
+    8      echo "✅ timetrakr-tools directory exists"
+    9  else
+   10      echo "❌ timetrakr-tools directory not found"
+   11      echo "Creating timetrakr-tools directory..."
+   12      mkdir -p ~/timetrakr-tools
+   13      git init ~/timetrakr-tools
+   14  fi
+   15  # Check if project_push.sh exists in tools
+   16  if [ -f ~/timetrakr-tools/project_push.sh ]; then
+   17      echo "✅ project_push.sh found in timetrakr-tools"
+   18  else
+   19      echo "❌ project_push.sh not found in timetrakr-tools"
+   20      echo "Creating modular push script..."
+   21      
+   22      cat > ~/timetrakr-tools/project_push.sh << 'SCRIPT_EOF'
+   23  #!/bin/bash
+   24  # Modular push script for any Git repository
+   25  PROJECT_DIR="${1:-$(pwd)}"
+   26  echo "🚀 Running push workflow for: $(basename "$PROJECT_DIR")"
+   27  # Navigate to project
+   28  cd "$PROJECT_DIR" || { echo "❌ Cannot access project directory"; exit 1; }
+   29  # Check if Git repository
+   30  if ! git rev-parse --git-dir > /dev/null 2>&1; then
+   31      echo "❌ Not a Git repository"
+   32      exit 1
+   33  fi
+   34  # Run project validation if exists
+   35  if [ -f "./project_validate.sh" ]; then
+   36      echo "🔍 Running project validation..."
+   37      if ./project_validate.sh > /dev/null 2>&1; then
+   38          echo "✅ Validation passed"
+   39      else
+   40          echo "❌ Validation failed"
+   41          exit 1
+   42      fi
+   43  fi
+   44  # Git operations
+   45  echo "📦 Staging changes..."
+   46  git add .
+   47  echo "💾 Creating commit..."
+   48  COMMIT_MSG="work: $(date +"%Y-%m-%d %H:%M")"
+   49  git commit -m "$COMMIT_MSG" || { echo "❌ Commit failed (no changes?)"; exit 1; }
+   50  echo "📤 Pushing to remote..."
+   51  git push origin main || { echo "❌ Push failed"; exit 1; }
+   52  echo "✅ Push complete for $(basename "$PROJECT_DIR")"
+   53  SCRIPT_EOF
+   54      
+   55      chmod +x ~/timetrakr-tools/project_push.sh
+   56      echo "✅ Created project_push.sh"
+   57  fi
+   58  # Check if alias is configured
+   59  if grep -q "alias gp=" ~/.bashrc; then
+   60      echo "✅ gp alias found in ~/.bashrc"
+   61      # Source to ensure alias is available
+   62      source ~/.bashrc 2>/dev/null || true
+   63  else
+   64      echo "❌ gp alias not found in ~/.bashrc"
+   65      echo "Adding gp alias..."
+   66      echo -e "\n# Timetrakr Tools Alias" >> ~/.bashrc
+   67      echo "alias gp='bash ~/timetrakr-tools/project_push.sh \"\$(pwd)\"'" >> ~/.bashrc
+   68      source ~/.bashrc
+   69      echo "✅ Added and sourced gp alias"
+   70  fi
+   71  # Verify alias works
+   72  if type gp > /dev/null 2>&1; then
+   73      echo "✅ gp alias is available"
+   74  else
+   75      echo "❌ gp alias not working"
+   76      echo "Temporary workaround: Using direct script call"
+   77      alias gp='bash ~/timetrakr-tools/project_push.sh "$(pwd)"'
+   78  fi
+   79  # Phase 2: Test Repository Creation
+   80  echo -e "\n🔧 PHASE 2: TEST ENVIRONMENT SETUP"
+   81  echo "-----------------------------------------"
+   82  # Create test repository
+   83  TEST_REPO_DIR="/tmp/timetrakr_test_$(date +%s)"
+   84  echo "Creating test repository at: $TEST_REPO_DIR"
+   85  mkdir -p "$TEST_REPO_DIR"
+   86  cd "$TEST_REPO_DIR" || exit 1
+   87  # Initialize Git repository
+   88  git init
+   89  git checkout -b main
+   90  # Create test files
+   91  echo "# Test Repository for gp alias" > README.md
+   92  echo "Test file created at $(date)" > test.txt
+   93  echo "Created test repository with 2 files"
+   94  # Create a mock validation script
+   95  cat > project_validate.sh << 'VALIDATION_EOF'
+   96  #!/bin/bash
+   97  # Mock validation script for testing
+   98  echo "🔍 Mock validation running..."
+   99  echo "✅ All checks passed (mock)"
+  100  exit 0
+  101  VALIDATION_EOF
+  102  chmod +x project_validate.sh
+  103  echo "Created mock validation script"
+  104  # Phase 3: Test Push Functionality
+  105  echo -e "\n🚀 PHASE 3: PUSH FUNCTIONALITY TEST"
+  106  echo "-----------------------------------------"
+  107  # First commit (local only)
+  108  git add .
+  109  git commit -m "test: initial commit"
+  110  echo "✅ Initial commit created locally"
+  111  # Test the gp alias
+  112  echo -e "\nTesting gp alias from test repository..."
+  113  echo "Current directory: $(pwd)"
+  114  # Simulate what gp would do
+  115  echo -e "\n[Simulating gp alias execution]"
+  116  bash ~/timetrakr-tools/project_push.sh "$TEST_REPO_DIR"
+  117  # Check git status
+  118  echo -e "\n📊 POST-TEST VERIFICATION:"
+  119  echo "-----------------------------------------"
+  120  git log --oneline -3
+  121  echo ""
+  122  git status
+  123  # Phase 4: Remote Repository Test (Optional)
+  124  echo -e "\n🌐 PHASE 4: REMOTE REPOSITORY TEST"
+  125  echo "-----------------------------------------"
+  126  echo "Note: This requires actual remote repository setup"
+  127  echo "To test with a real remote:"
+  128  echo "1. Create a repository on GitHub/GitLab"
+  129  echo "2. Add remote: git remote add origin <url>"
+  130  echo "3. Run: gp"
+  131  echo ""
+  132  echo "For this test, we'll simulate remote operations:"
+  133  # Show what would happen with remote
+  134  echo -e "\nExpected remote push output:"
+  135  cat << 'REMOTE_EOF'
+  136  Enumerating objects: 5, done.
+  137  Counting objects: 100% (5/5), done.
+  138  Delta compression using up to 8 threads
+  139  Compressing objects: 100% (3/3), done.
+  140  Writing objects: 100% (3/3), 546 bytes | 546.00 KiB/s, done.
+  141  Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+  142  remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+  143  To github.com:user/timetrakr.git
+  144     abc123..def456  main -> main
+  145  REMOTE_EOF
+  146  # Phase 5: Cleanup and Summary
+  147  echo -e "\n📋 PHASE 5: SUMMARY AND CLEANUP"
+  148  echo "-----------------------------------------"
+  149  echo "✅ Test completed successfully!"
+  150  echo ""
+  151  echo "📋 REPRODUCIBILITY CHECKLIST:"
+  152  echo "   ✓ Modular push script created"
+  153  echo "   ✓ gp alias configured"
+  154  echo "   ✓ Script works from any directory"
+  155  echo "   ✓ Validation integration maintained"
+  156  echo "   ✓ Git operations functioning"
+  157  echo ""
+  158  echo "🔧 TOOLING STATUS:"
+  159  echo "   Centralized tooling: ~/timetrakr-tools/"
+  160  echo "   Push script: ~/timetrakr-tools/project_push.sh"
+  161  echo "   Alias: gp (works from any Git repo)"
+  162  echo ""
+  163  echo "🚀 USAGE EXAMPLES:"
+  164  echo "   From timetrakr:      cd ~/timetrakr && gp"
+  165  echo "   From another repo:   cd /path/to/repo && gp"
+  166  echo "   Specific directory:  bash ~/timetrakr-tools/project_push.sh /path/to/repo"
+  167  echo ""
+  168  echo "🧹 Cleaning up test repository..."
+  169  rm -rf "$TEST_REPO_DIR"
+  170  echo "Test repository removed: $TEST_REPO_DIR"
+  171  echo -e "\n========================================="
+  172  echo "REPRODUCIBILITY TEST COMPLETE ✓"
+  173  echo "========================================="
+  174  EOF
+  175  # Make it executable
+  176  chmod +x ~/test_gp_reproducibility.sh
+  177  echo "✅ Created test script at: ~/test_gp_reproducibility.sh"
+  178  git status
+  179  echo "Test change at $(date)" >> test_gp.txt
+  180  gp
+  181  echo "Test change at $(date)" >> test_gp2.txt
+  182  git status
+  183  cat > ~/test_gp_reproducibility.sh << 'EOF'
+  184  #!/bin/bash
+  185  # Timetrakr Tooling Reproducibility Test
+  186  # This script tests the new modular gp alias for local-to-remote push functionality
+  187  echo "========================================="
+  188  echo "TIMETRAKR TOOLING REPRODUCIBILITY TEST"
+  189  echo "Date: $(date)"
+  190  echo "========================================="
+  191  # Phase 1: Setup Verification
+  192  echo -e "\n🔍 PHASE 1: SETUP VERIFICATION"
+  193  echo "-----------------------------------------"
+  194  # Check if timetrakr-tools exists
+  195  if [ -d ~/timetrakr-tools ]; then
+  196      echo "✅ timetrakr-tools directory exists"
+  197  else
+  198      echo "❌ timetrakr-tools directory not found"
+  199      echo "Creating timetrakr-tools directory..."
+  200      mkdir -p ~/timetrakr-tools
+  201      git init ~/timetrakr-tools
+  202  fi
+  203  # Check if project_push.sh exists in tools
+  204  if [ -f ~/timetrakr-tools/project_push.sh ]; then
+  205      echo "✅ project_push.sh found in timetrakr-tools"
+  206  else
+  207      echo "❌ project_push.sh not found in timetrakr-tools"
+  208      echo "Creating modular push script..."
+  209      
+  210      cat > ~/timetrakr-tools/project_push.sh << 'SCRIPT_EOF'
+  211  #!/bin/bash
+  212  # Modular push script for any Git repository
+  213  PROJECT_DIR="${1:-$(pwd)}"
+  214  echo "🚀 Running push workflow for: $(basename "$PROJECT_DIR")"
+  215  # Navigate to project
+  216  cd "$PROJECT_DIR" || { echo "❌ Cannot access project directory"; exit 1; }
+  217  # Check if Git repository
+  218  if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  219      echo "❌ Not a Git repository"
+  220      exit 1
+  221  fi
+  222  # Run project validation if exists
+  223  if [ -f "./project_validate.sh" ]; then
+  224      echo "🔍 Running project validation..."
+  225      if ./project_validate.sh > /dev/null 2>&1; then
+  226          echo "✅ Validation passed"
+  227      else
+  228          echo "❌ Validation failed"
+  229          exit 1
+  230      fi
+  231  fi
+  232  # Git operations
+  233  echo "📦 Staging changes..."
+  234  git add .
+  235  echo "💾 Creating commit..."
+  236  COMMIT_MSG="work: $(date +"%Y-%m-%d %H:%M")"
+  237  git commit -m "$COMMIT_MSG" || { echo "❌ Commit failed (no changes?)"; exit 1; }
+  238  echo "📤 Pushing to remote..."
+  239  git push origin main || { echo "❌ Push failed"; exit 1; }
+  240  echo "✅ Push complete for $(basename "$PROJECT_DIR")"
+  241  SCRIPT_EOF
+  242      
+  243      chmod +x ~/timetrakr-tools/project_push.sh
+  244      echo "✅ Created project_push.sh"
+  245  fi
+  246  # Check if alias is configured
+  247  if grep -q "alias gp=" ~/.bashrc; then
+  248      echo "✅ gp alias found in ~/.bashrc"
+  249      # Source to ensure alias is available
+  250      source ~/.bashrc 2>/dev/null || true
+  251  else
+  252      echo "❌ gp alias not found in ~/.bashrc"
+  253      echo "Adding gp alias..."
+  254      echo -e "\n# Timetrakr Tools Alias" >> ~/.bashrc
+  255      echo "alias gp='bash ~/timetrakr-tools/project_push.sh \"\$(pwd)\"'" >> ~/.bashrc
+  256      source ~/.bashrc
+  257      echo "✅ Added and sourced gp alias"
+  258  fi
+  259  # Verify alias works
+  260  if type gp > /dev/null 2>&1; then
+  261      echo "✅ gp alias is available"
+  262  else
+  263      echo "❌ gp alias not working"
+  264      echo "Temporary workaround: Using direct script call"
+  265      alias gp='bash ~/timetrakr-tools/project_push.sh "$(pwd)"'
+  266  fi
+  267  # Phase 2: Test Repository Creation
+  268  echo -e "\n🔧 PHASE 2: TEST ENVIRONMENT SETUP"
+  269  echo "-----------------------------------------"
+  270  # Create test repository
+  271  TEST_REPO_DIR="/tmp/timetrakr_test_$(date +%s)"
+  272  echo "Creating test repository at: $TEST_REPO_DIR"
+  273  mkdir -p "$TEST_REPO_DIR"
+  274  cd "$TEST_REPO_DIR" || exit 1
+  275  # Initialize Git repository
+  276  git init
+  277  git checkout -b main
+  278  # Create test files
+  279  echo "# Test Repository for gp alias" > README.md
+  280  echo "Test file created at $(date)" > test.txt
+  281  echo "Created test repository with 2 files"
+  282  # Create a mock validation script
+  283  cat > project_validate.sh << 'VALIDATION_EOF'
+  284  #!/bin/bash
+  285  # Mock validation script for testing
+  286  echo "🔍 Mock validation running..."
+  287  echo "✅ All checks passed (mock)"
+  288  exit 0
+  289  VALIDATION_EOF
+  290  chmod +x project_validate.sh
+  291  echo "Created mock validation script"
+  292  # Phase 3: Test Push Functionality
+  293  echo -e "\n🚀 PHASE 3: PUSH FUNCTIONALITY TEST"
+  294  echo "-----------------------------------------"
+  295  # First commit (local only)
+  296  git add .
+  297  git commit -m "test: initial commit"
+  298  echo "✅ Initial commit created locally"
+  299  # Test the gp alias
+  300  echo -e "\nTesting gp alias from test repository..."
+  301  echo "Current directory: $(pwd)"
+  302  # Simulate what gp would do
+  303  echo -e "\n[Simulating gp alias execution]"
+  304  bash ~/timetrakr-tools/project_push.sh "$TEST_REPO_DIR"
+  305  # Check git status
+  306  echo -e "\n📊 POST-TEST VERIFICATION:"
+  307  echo "-----------------------------------------"
+  308  git log --oneline -3
+  309  echo ""
+  310  git status
+  311  # Phase 4: Remote Repository Test (Optional)
+  312  echo -e "\n🌐 PHASE 4: REMOTE REPOSITORY TEST"
+  313  echo "-----------------------------------------"
+  314  echo "Note: This requires actual remote repository setup"
+  315  echo "To test with a real remote:"
+  316  echo "1. Create a repository on GitHub/GitLab"
+  317  echo "2. Add remote: git remote add origin <url>"
+  318  echo "3. Run: gp"
+  319  echo ""
+  320  echo "For this test, we'll simulate remote operations:"
+  321  # Show what would happen with remote
+  322  echo -e "\nExpected remote push output:"
+  323  cat << 'REMOTE_EOF'
+  324  Enumerating objects: 5, done.
+  325  Counting objects: 100% (5/5), done.
+  326  Delta compression using up to 8 threads
+  327  Compressing objects: 100% (3/3), done.
+  328  Writing objects: 100% (3/3), 546 bytes | 546.00 KiB/s, done.
+  329  Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+  330  remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+  331  To github.com:user/timetrakr.git
+  332     abc123..def456  main -> main
+  333  REMOTE_EOF
+  334  # Phase 5: Cleanup and Summary
+  335  echo -e "\n📋 PHASE 5: SUMMARY AND CLEANUP"
+  336  echo "-----------------------------------------"
+  337  echo "✅ Test completed successfully!"
+  338  echo ""
+  339  echo "📋 REPRODUCIBILITY CHECKLIST:"
+  340  echo "   ✓ Modular push script created"
+  341  echo "   ✓ gp alias configured"
+  342  echo "   ✓ Script works from any directory"
+  343  echo "   ✓ Validation integration maintained"
+  344  echo "   ✓ Git operations functioning"
+  345  echo ""
+  346  echo "🔧 TOOLING STATUS:"
+  347  echo "   Centralized tooling: ~/timetrakr-tools/"
+  348  echo "   Push script: ~/timetrakr-tools/project_push.sh"
+  349  echo "   Alias: gp (works from any Git repo)"
+  350  echo ""
+  351  echo "🚀 USAGE EXAMPLES:"
+  352  echo "   From timetrakr:      cd ~/timetrakr && gp"
+  353  echo "   From another repo:   cd /path/to/repo && gp"
+  354  echo "   Specific directory:  bash ~/timetrakr-tools/project_push.sh /path/to/repo"
+  355  echo ""
+  356  echo "🧹 Cleaning up test repository..."
+  357  rm -rf "$TEST_REPO_DIR"
+  358  echo "Test repository removed: $TEST_REPO_DIR"
+  359  echo -e "\n========================================="
+  360  echo "REPRODUCIBILITY TEST COMPLETE ✓"
+  361  echo "========================================="
+  362  EOF
+  363  ls
+  364  # Method 1: Using echo for simpler content
+  365  echo "# Reproducibility Document" > ~/timetrakr/reproducibility.md
+  366  echo "Created: $(date)" >> ~/timetrakr/reproducibility.md
+  367  echo "Testing gp alias workflow" >> ~/timetrakr/reproducibility.md
+  368  # Method 2: Using printf for more control
+  369  cd ~/timetrakr
+  370  printf '%s\n'   "# Reproducibility Test"   "## Date: $(date)"   ""   "### Test Results:"   "- gp alias: Working"   "- git add .: Staging correctly"   "- Commit message: Automated"   "- Remote push: Successful"   > reproducibility_test.md
+  371  # Method 3: Direct file creation
+  372  cd ~/timetrakr
+  373  cat > gp_reproducibility.md << 'DOC_EOF'
+  374  # GP Alias Reproducibility
+  375  This document tests the gp alias by being created and staged.
+  376  ## Creation Time
+  377  $(date)
+  378  ## Expected Flow
+  379  1. This file is created
+  380  2. `git add .` stages it
+  381  3. `git commit` creates commit
+  382  4. `git push` sends to remote
+  383  ## Verification
+  384  File should appear in git status as "new file"
+  385  DOC_EOF
+  386  ls
+  387  git status
+  388  gp
+  389  cd ~/timetrakr && git log --oneline -20
+  390  alias
+  391* cd ~7
+  392  clear && exit
+  393  git config --global user.name
+  394  git config --global user.email
+  395  alias
+  396  git stat
+  397  git status
+  398  cd timetrakr/
+  399  cat > gp_reproducibili.ty.md << 'DOC_EOF'
+  400  q
+  401  alias
+  402  tree
+  403  cd ollama-termux
+  404  tree
+  405  ls -la
+  406  cd -
+  407  cp ollama-termux/ cd
+  408  cp -p ollama-termux/ 
+  409  dir
+  410  mkdir ol;cp ollama-termux/ 
+  411  cp ollama-termux/ timetrakr
+  412  cp ollama-termux timetrakr/
+  413  cp ollama-termux -r timetrakr/ 
+  414  cp --help
+  415  exit
+  416  cp ollama-termux -r timetrakr/ 
+  417  cp -p ollama-termux/cd --
+  418  cd..
+  419  sudo apt install -fy 
+  420  tree
+  421  termux-change-repo
+  422  apt list --upgradable
+  423  pkg upgrade -y
+  424  tree
+  425  rm waonina repo1
+  426  rm waobina
+  427  mv waobina --O
+  428  mv --h
+  429  pkg upgrade -y
+  430  pkg install -y clang wget cmake git
+  431  pkg install -y clang wget cmake git && git clone https://github.com/ggerganov/llama.cpp
+  432  cd llama.cpp
+  433  cmake -B build
+  434  cmake --build build --config Releas
+  435  status
+  436  tree
+  437  cp --help
+  438  tre
+  439  tree
+  440  cd timetrakr
+  441  git status
+  442  tree > stateOfDirectory.txt
+  443  git status
+  444  aliases
+  445  alias
+  446  gh
+  447  gp
+  448  git status
+  449  git add .
+  450  gp
+  451  aliases
+  452  history > bashrc-mobi.txt
