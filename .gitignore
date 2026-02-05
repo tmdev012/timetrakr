@@ -1,0 +1,54 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+db/*
+!db/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+
+# Backups
+backups/*
+!backups/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Build outputs
+dist/
+build/
+*.o
+*.exe
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
